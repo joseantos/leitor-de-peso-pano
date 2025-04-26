@@ -5,16 +5,97 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Leitor de Peso</title>
   <style>
-    /* Existing CSS */
+    body {
+      background-color: #000;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+    #scanner {
+      width: 90vw;
+      max-width: 400px;
+      margin: 20px auto;
+      border: 2px solid #fff;
+    }
+    #scanner-loading {
+      color: #fff;
+      font-size: 18px;
+      padding: 20px;
+    }
+    button {
+      background-color: #0f62fe;
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      font-size: 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 10px;
+    }
+    button:hover {
+      background-color: #0353e9;
+    }
+    button:focus, input:focus {
+      outline: 2px solid #0f62fe;
+    }
+    input {
+      padding: 10px;
+      font-size: 18px;
+      border-radius: 8px;
+      border: none;
+      margin: 10px;
+      width: 80%;
+      max-width: 300px;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+      margin-top: 20px;
+    }
+    li {
+      background: #222;
+      margin: 5px;
+      padding: 10px;
+      border-radius: 8px;
+    }
+    .added {
+      animation: flash 0.2s;
+    }
+    @keyframes flash {
+      0% { background-color: #0f62fe; }
+      100% { background-color: #222; }
+    }
+    footer {
+      margin-top: 40px;
+      font-size: 14px;
+      color: #888;
+    }
   </style>
 </head>
 <body>
-  <!-- Existing HTML -->
+  <h1>Leitor de Peso</h1>
+  <button id="start-stop-button">Ler Código</button>
+  <br>
+  <label for="manual-input" style="display:none;">Peso (kg):</label>
+  <input type="number" id="manual-input" placeholder="Inserir peso manual">
+  <button id="add-manual-button">Adicionar Manual</button>
+  <button id="clear-list-button">Limpar Lista</button>
+  <div id="scanner" style="display:none;">
+    <div id="scanner-loading" style="display:none;">Carregando câmera...</div>
+  </div>
+  <ul id="peso-lista"></ul>
+  <h2>Total de Peças: <span id="quantidade">0</span></h2>
+  <h2>Peso Total: <span id="peso-total">0</span> kg</h2>
+  <footer>Desenvolvido por Josenilson Moura</footer>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
   <script>
-    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+    document.addEventListener('DOMContentLoaded', () => {
       let pesos = [];
       let scannerAtivo = false;
+      let audioContextUnlocked = false;
 
       const pesoLista = document.getElementById('peso-lista');
       const pesoTotal = document.getElementById('peso-total');
@@ -23,6 +104,8 @@
       const manualInput = document.getElementById('manual-input');
       const addManualButton = document.getElementById('add-manual-button');
       const clearListButton = document.getElementById('clear-list-button');
+      const scannerDiv = document.getElementById('scanner');
+      const loadingDiv = document.getElementById('scanner-loading');
 
       function atualizarLista() {
         pesoLista.innerHTML = '';
@@ -44,8 +127,18 @@
       }
 
       function tocarSom() {
-        const beep = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
-        beep.play().catch(error => console.error('Erro ao reproduzir som:', error));
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          const oscillator = ctx.createOscillator();
+          oscillator.type = 'sine';
+          oscillator.frequency.setValueAtTime(440, ctx.currentTime);
+          oscillator.connect(ctx.destination);
+          oscillator.start();
+          oscillator.stop(ctx.currentTime + 0.1);
+          audioContextUnlocked = true;
+        } catch (error) {
+          console.error('Erro ao reproduzir som:', error);
+        }
       }
 
       function adicionarPeso(valor) {
@@ -55,6 +148,11 @@
           vibrateIfSupported(200);
           tocarSom();
           atualizarLista();
+          const lastLi = pesoLista.lastElementChild;
+          if (lastLi) {
+            lastLi.classList.add('added');
+            setTimeout(() => lastLi.classList.remove('added'), 200);
+          }
         }
       }
 
@@ -69,10 +167,14 @@
 
       startStopButton.addEventListener(eventType, (e) => {
         e.preventDefault();
+        if (!audioContextUnlocked) {
+          tocarSom();
+        }
         iniciarScanner();
       });
 
       addManualButton.addEventListener(eventType, adicionarPesoHandler);
+
       clearListButton.addEventListener(eventType, (e) => {
         e.preventDefault();
         pesos = [];
@@ -87,8 +189,15 @@
         }
       });
 
+      const barcodeToWeight = {
+        '123456789012': 1.5,
+        '987654321098': 2.0
+      };
+
       function iniciarScanner() {
         if (scannerAtivo) return;
+        scannerDiv.style.display = 'block';
+        loadingDiv.style.display = 'block';
         Quagga.init({
           inputStream: {
             name: "Live",
@@ -96,23 +205,31 @@
             target: document.querySelector('#scanner'),
             constraints: { facingMode: "environment" }
           },
-          decoder: { readers: ["ean_reader", "code_128_reader"] }
+          decoder: { readers: ["code_128_reader", "ean_reader"] }
         }, function(err) {
+          loadingDiv.style.display = 'none';
           if (err) {
             console.error('Quagga init error:', err);
-            alert('Erro ao acessar a câmera: ' + err.message);
+            alert('Erro ao iniciar a câmera: ' + err.message + '. Verifique se está usando HTTPS e se a permissão da câmera foi concedida.');
+            scannerDiv.style.display = 'none';
+            startStopButton.textContent = 'Ler Código';
             return;
           }
           Quagga.start();
           scannerAtivo = true;
-          document.getElementById('scanner').style.display = 'block';
           startStopButton.textContent = 'Fechar Câmera';
         });
 
         Quagga.onDetected((data) => {
           if (data && data.codeResult && data.codeResult.code) {
-            adicionarPeso(data.codeResult.code);
-            pararScanner();
+            const code = data.codeResult.code;
+            const peso = barcodeToWeight[code] || prompt('Digite o peso para o código ' + code + ' (kg):');
+            if (peso && !isNaN(peso) && peso > 0) {
+              adicionarPeso(peso);
+              pararScanner();
+            } else {
+              alert('Peso inválido para o código: ' + code);
+            }
           }
         });
       }
@@ -120,12 +237,11 @@
       function pararScanner() {
         Quagga.stop();
         scannerAtivo = false;
-        document.getElementById('scanner').style.display = 'none';
+        scannerDiv.style.display = 'none';
+        loadingDiv.style.display = 'none';
         startStopButton.textContent = 'Ler Código';
       }
-    } else {
-      console.log('This script requires a browser environment.');
-    }
+    });
   </script>
 </body>
 </html>
