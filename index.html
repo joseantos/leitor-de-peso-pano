@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Leitor de Peso com Câmera</title>
+  <title>Leitor de Peso com Câmera e Manual</title>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
     body {
@@ -27,9 +27,12 @@
       font-size: 1.8em;
       margin-top: 20px;
     }
-    button {
+    button, input[type="number"] {
       padding: 10px 20px;
       font-size: 1em;
+      margin-top: 10px;
+    }
+    #manual-area {
       margin-top: 20px;
     }
   </style>
@@ -39,6 +42,11 @@
 <h1>Leitor de Peso</h1>
 
 <div id="reader"></div>
+
+<div id="manual-area">
+  <input id="manual-input" type="number" step="0.01" placeholder="Peso manual (kg)">
+  <button onclick="adicionarManual()">Adicionar Manualmente</button>
+</div>
 
 <div id="lista"></div>
 
@@ -70,6 +78,14 @@
         navigator.vibrate(200);
       }
     }
+  }
+
+  function adicionarManual() {
+    const manualInput = document.getElementById('manual-input');
+    const peso = manualInput.value;
+    adicionarPeso(peso);
+    manualInput.value = '';
+    manualInput.focus();
   }
 
   function zerar() {
