@@ -3,57 +3,98 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Leitor de Peso</title>
+  <title>Leitor de Peso com Câmera</title>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
       text-align: center;
-      padding: 20px;
+      padding: 10px;
+    }
+    #reader {
+      width: 300px;
+      margin: auto;
+    }
+    #lista {
+      margin-top: 20px;
+      text-align: left;
+    }
+    .item {
+      font-size: 1.2em;
+      margin-bottom: 5px;
     }
     #total {
-      font-size: 2em;
-      margin: 20px 0;
+      font-size: 1.8em;
+      margin-top: 20px;
     }
     button {
       padding: 10px 20px;
-      font-size: 1.2em;
+      font-size: 1em;
       margin-top: 20px;
     }
   </style>
 </head>
 <body>
-  <h1>Leitor de Peso</h1>
-  <input id="barcode" type="text" autofocus placeholder="Escaneie o código..." style="font-size:1.5em; padding:10px; width:80%;">
-  <div id="total">Total: 0</div>
-  <button onclick="resetTotal()">Zerar</button>
 
-  <audio id="beep" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
+<h1>Leitor de Peso</h1>
 
-  <script>
-    let total = 0;
+<div id="reader"></div>
 
-    const barcodeInput = document.getElementById('barcode');
-    const totalDisplay = document.getElementById('total');
-    const beepSound = document.getElementById('beep');
+<div id="lista"></div>
 
-    barcodeInput.addEventListener('change', () => {
-      const value = parseFloat(barcodeInput.value);
-      if (!isNaN(value)) {
-        total += value;
-        totalDisplay.textContent = `Total: ${total.toFixed(2)}`;
-        beepSound.play();
-        if (navigator.vibrate) {
-          navigator.vibrate(200);
-        }
+<div id="total">Total: 0</div>
+
+<button onclick="zerar()">Zerar Tudo</button>
+
+<audio id="beep" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
+
+<script>
+  let total = 0;
+  let listaDiv = document.getElementById('lista');
+  let totalDiv = document.getElementById('total');
+  let beepSound = document.getElementById('beep');
+
+  function adicionarPeso(peso) {
+    const pesoFormatado = parseFloat(peso);
+    if (!isNaN(pesoFormatado)) {
+      total += pesoFormatado;
+      const item = document.createElement('div');
+      item.className = 'item';
+      item.textContent = `Peça: ${pesoFormatado.toFixed(2)} kg`;
+      listaDiv.appendChild(item);
+
+      totalDiv.textContent = `Total: ${total.toFixed(2)} kg`;
+
+      beepSound.play();
+      if (navigator.vibrate) {
+        navigator.vibrate(200);
       }
-      barcodeInput.value = '';
-    });
-
-    function resetTotal() {
-      total = 0;
-      totalDisplay.textContent = 'Total: 0';
-      barcodeInput.focus();
     }
-  </script>
+  }
+
+  function zerar() {
+    total = 0;
+    listaDiv.innerHTML = '';
+    totalDiv.textContent = 'Total: 0';
+  }
+
+  const html5QrCode = new Html5Qrcode("reader");
+
+  const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+  html5QrCode.start(
+    { facingMode: "environment" }, // câmera traseira
+    config,
+    (decodedText, decodedResult) => {
+      adicionarPeso(decodedText);
+    },
+    (errorMessage) => {
+      // ignorar erros de leitura
+    })
+    .catch(err => {
+      console.error("Erro ao abrir a câmera", err);
+    });
+</script>
+
 </body>
 </html>
