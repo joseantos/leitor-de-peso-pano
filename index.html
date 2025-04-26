@@ -66,7 +66,7 @@
 <br>
 <input type="number" id="manual-input" placeholder="Inserir peso manual">
 <button id="add-manual-button">Adicionar Manual</button>
-<button id="clear-list-button">Limpar Lista</button> <!-- Botão de apagar -->
+<button id="clear-list-button">Limpar Lista</button>
 
 <div id="scanner" style="display:none;"></div>
 
@@ -88,7 +88,7 @@
   const startStopButton = document.getElementById('start-stop-button');
   const manualInput = document.getElementById('manual-input');
   const addManualButton = document.getElementById('add-manual-button');
-  const clearListButton = document.getElementById('clear-list-button'); // Botão de limpar lista
+  const clearListButton = document.getElementById('clear-list-button');
 
   function atualizarLista() {
     pesoLista.innerHTML = '';
@@ -108,7 +108,7 @@
     if (!isNaN(peso) && peso > 0) {
       pesos.push(peso);
       navigator.vibrate(200);
-      tocarSom();  // Chama a função para tocar o som
+      tocarSom();
       atualizarLista();
     }
   }
@@ -116,22 +116,29 @@
   function tocarSom() {
     const beep = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
     beep.play().catch(error => {
-      console.error('Erro ao reproduzir som: ', error);  // Caso o som não toque, será exibido um erro
+      console.error('Erro ao reproduzir som: ', error);
     });
   }
 
-  // Substitui o 'click' por 'touchstart' para garantir que no celular o evento seja ativado
-  startStopButton.addEventListener('touchstart', () => {
-    if (!scannerAtivo) {
-      iniciarScanner();
-    } else {
-      pararScanner();
-    }
-  });
-
-  addManualButton.addEventListener('touchstart', () => {
+  // Use touchstart e click para maior compatibilidade
+  function adicionarPesoHandler() {
     adicionarPeso(manualInput.value);
     manualInput.value = '';
+  }
+
+  startStopButton.addEventListener('touchstart', iniciarScanner);
+  startStopButton.addEventListener('click', iniciarScanner); // Fallback para click
+
+  addManualButton.addEventListener('touchstart', adicionarPesoHandler);
+  addManualButton.addEventListener('click', adicionarPesoHandler); // Fallback para click
+
+  clearListButton.addEventListener('touchstart', () => {
+    pesos = [];
+    atualizarLista();
+  });
+  clearListButton.addEventListener('click', () => {
+    pesos = [];
+    atualizarLista();
   });
 
   manualInput.addEventListener('keydown', (e) => {
@@ -140,12 +147,6 @@
       adicionarPeso(manualInput.value);
       manualInput.value = '';
     }
-  });
-
-  // Evento touchstart para o botão de limpar lista
-  clearListButton.addEventListener('touchstart', () => {
-    pesos = [];
-    atualizarLista();
   });
 
   function iniciarScanner() {
