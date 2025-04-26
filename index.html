@@ -66,6 +66,7 @@
 <br>
 <input type="number" id="manual-input" placeholder="Inserir peso manual">
 <button id="add-manual-button">Adicionar Manual</button>
+<button id="clear-list-button">Limpar Lista</button> <!-- Botão de apagar -->
 
 <div id="scanner" style="display:none;"></div>
 
@@ -87,6 +88,7 @@
   const startStopButton = document.getElementById('start-stop-button');
   const manualInput = document.getElementById('manual-input');
   const addManualButton = document.getElementById('add-manual-button');
+  const clearListButton = document.getElementById('clear-list-button'); // Botão de limpar lista
 
   function atualizarLista() {
     pesoLista.innerHTML = '';
@@ -131,7 +133,6 @@
     manualInput.value = '';
   });
 
-  // Alteração do evento para 'keydown' para garantir que funcione no celular
   manualInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -140,11 +141,16 @@
     }
   });
 
-  // Melhorando o evento de 'input' para celulares
   manualInput.addEventListener('input', (e) => {
     if (manualInput.value && e.inputType === 'insertText') {
       tocarSom(); // Toca o som toda vez que o valor do input muda
     }
+  });
+
+  // Função para limpar a lista de pesos
+  clearListButton.addEventListener('click', () => {
+    pesos = [];
+    atualizarLista();
   });
 
   function iniciarScanner() {
