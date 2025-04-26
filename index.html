@@ -5,189 +5,127 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Leitor de Peso</title>
   <style>
-    body {
-      background-color: #000;
-      color: #fff;
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 20px;
-      text-align: center;
-    }
-    #scanner {
-      width: 100%;
-      max-width: 400px;
-      margin: 20px auto;
-      border: 2px solid #fff;
-    }
-    button {
-      background-color: #0f62fe;
-      border: none;
-      color: white;
-      padding: 10px 20px;
-      font-size: 18px;
-      border-radius: 8px;
-      cursor: pointer;
-      margin: 10px;
-    }
-    button:hover {
-      background-color: #0353e9;
-    }
-    input {
-      padding: 10px;
-      font-size: 18px;
-      border-radius: 8px;
-      border: none;
-      margin: 10px;
-      width: 200px;
-    }
-    ul {
-      list-style: none;
-      padding: 0;
-      margin-top: 20px;
-    }
-    li {
-      background: #222;
-      margin: 5px;
-      padding: 10px;
-      border-radius: 8px;
-    }
-    footer {
-      margin-top: 40px;
-      font-size: 14px;
-      color: #888;
-    }
+    /* Existing CSS */
   </style>
 </head>
 <body>
+  <!-- Existing HTML -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+  <script>
+    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+      let pesos = [];
+      let scannerAtivo = false;
 
-<h1>Leitor de Peso</h1>
+      const pesoLista = document.getElementById('peso-lista');
+      const pesoTotal = document.getElementById('peso-total');
+      const quantidade = document.getElementById('quantidade');
+      const startStopButton = document.getElementById('start-stop-button');
+      const manualInput = document.getElementById('manual-input');
+      const addManualButton = document.getElementById('add-manual-button');
+      const clearListButton = document.getElementById('clear-list-button');
 
-<button id="start-stop-button">Ler Código</button>
-<br>
-<input type="number" id="manual-input" placeholder="Inserir peso manual">
-<button id="add-manual-button">Adicionar Manual</button>
-<button id="clear-list-button">Limpar Lista</button>
+      function atualizarLista() {
+        pesoLista.innerHTML = '';
+        let total = 0;
+        pesos.forEach(p => {
+          total += p;
+          const li = document.createElement('li');
+          li.textContent = p.toFixed(3) + ' kg';
+          pesoLista.appendChild(li);
+        });
+        pesoTotal.textContent = total.toFixed(3);
+        quantidade.textContent = pesos.length;
+      }
 
-<div id="scanner" style="display:none;"></div>
-
-<ul id="peso-lista"></ul>
-
-<h2>Total de Peças: <span id="quantidade">0</span></h2>
-<h2>Peso Total: <span id="peso-total">0</span> kg</h2>
-
-<footer>Desenvolvido por Josenilson Moura</footer>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
-<script>
-  let pesos = [];
-  let scannerAtivo = false;
-
-  const pesoLista = document.getElementById('peso-lista');
-  const pesoTotal = document.getElementById('peso-total');
-  const quantidade = document.getElementById('quantidade');
-  const startStopButton = document.getElementById('start-stop-button');
-  const manualInput = document.getElementById('manual-input');
-  const addManualButton = document.getElementById('add-manual-button');
-  const clearListButton = document.getElementById('clear-list-button');
-
-  function atualizarLista() {
-    pesoLista.innerHTML = '';
-    let total = 0;
-    pesos.forEach(p => {
-      total += p;
-      const li = document.createElement('li');
-      li.textContent = p.toFixed(3) + ' kg';
-      pesoLista.appendChild(li);
-    });
-    pesoTotal.textContent = total.toFixed(3);
-    quantidade.textContent = pesos.length;
-  }
-
-  function adicionarPeso(valor) {
-    let peso = parseFloat(valor);
-    if (!isNaN(peso) && peso > 0) {
-      pesos.push(peso);
-      navigator.vibrate(200);
-      tocarSom();
-      atualizarLista();
-    }
-  }
-
-  function tocarSom() {
-    const beep = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
-    beep.play().catch(error => {
-      console.error('Erro ao reproduzir som: ', error);
-    });
-  }
-
-  // Use touchstart e click para maior compatibilidade
-  function adicionarPesoHandler() {
-    adicionarPeso(manualInput.value);
-    manualInput.value = '';
-  }
-
-  startStopButton.addEventListener('touchstart', iniciarScanner);
-  startStopButton.addEventListener('click', iniciarScanner); // Fallback para click
-
-  addManualButton.addEventListener('touchstart', adicionarPesoHandler);
-  addManualButton.addEventListener('click', adicionarPesoHandler); // Fallback para click
-
-  clearListButton.addEventListener('touchstart', () => {
-    pesos = [];
-    atualizarLista();
-  });
-  clearListButton.addEventListener('click', () => {
-    pesos = [];
-    atualizarLista();
-  });
-
-  manualInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      adicionarPeso(manualInput.value);
-      manualInput.value = '';
-    }
-  });
-
-  function iniciarScanner() {
-    Quagga.init({
-      inputStream: {
-        name: "Live",
-        type: "LiveStream",
-        target: document.querySelector('#scanner'),
-        constraints: {
-          facingMode: "environment"
+      function vibrateIfSupported(duration) {
+        if ('vibrate' in navigator) {
+          navigator.vibrate(duration);
         }
-      },
-      decoder: {
-        readers: ["ean_reader", "ean_8_reader", "code_128_reader", "upc_reader", "upc_e_reader"]
       }
-    }, function(err) {
-      if (err) {
-        console.error(err);
-        return;
+
+      function tocarSom() {
+        const beep = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+        beep.play().catch(error => console.error('Erro ao reproduzir som:', error));
       }
-      Quagga.start();
-      scannerAtivo = true;
-      document.getElementById('scanner').style.display = 'block';
-      startStopButton.textContent = 'Fechar Câmera';
-    });
 
-    Quagga.onDetected((data) => {
-      if (data && data.codeResult && data.codeResult.code) {
-        adicionarPeso(data.codeResult.code);
-        pararScanner();
+      function adicionarPeso(valor) {
+        let peso = parseFloat(valor);
+        if (!isNaN(peso) && peso > 0) {
+          pesos.push(peso);
+          vibrateIfSupported(200);
+          tocarSom();
+          atualizarLista();
+        }
       }
-    });
-  }
 
-  function pararScanner() {
-    Quagga.stop();
-    scannerAtivo = false;
-    document.getElementById('scanner').style.display = 'none';
-    startStopButton.textContent = 'Ler Código';
-  }
-</script>
+      function adicionarPesoHandler(e) {
+        e.preventDefault();
+        adicionarPeso(manualInput.value);
+        manualInput.value = '';
+      }
 
+      const isTouchDevice = 'ontouchstart' in window;
+      const eventType = isTouchDevice ? 'touchstart' : 'click';
+
+      startStopButton.addEventListener(eventType, (e) => {
+        e.preventDefault();
+        iniciarScanner();
+      });
+
+      addManualButton.addEventListener(eventType, adicionarPesoHandler);
+      clearListButton.addEventListener(eventType, (e) => {
+        e.preventDefault();
+        pesos = [];
+        atualizarLista();
+      });
+
+      manualInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          adicionarPeso(manualInput.value);
+          manualInput.value = '';
+        }
+      });
+
+      function iniciarScanner() {
+        if (scannerAtivo) return;
+        Quagga.init({
+          inputStream: {
+            name: "Live",
+            type: "LiveStream",
+            target: document.querySelector('#scanner'),
+            constraints: { facingMode: "environment" }
+          },
+          decoder: { readers: ["ean_reader", "code_128_reader"] }
+        }, function(err) {
+          if (err) {
+            console.error('Quagga init error:', err);
+            alert('Erro ao acessar a câmera: ' + err.message);
+            return;
+          }
+          Quagga.start();
+          scannerAtivo = true;
+          document.getElementById('scanner').style.display = 'block';
+          startStopButton.textContent = 'Fechar Câmera';
+        });
+
+        Quagga.onDetected((data) => {
+          if (data && data.codeResult && data.codeResult.code) {
+            adicionarPeso(data.codeResult.code);
+            pararScanner();
+          }
+        });
+      }
+
+      function pararScanner() {
+        Quagga.stop();
+        scannerAtivo = false;
+        document.getElementById('scanner').style.display = 'none';
+        startStopButton.textContent = 'Ler Código';
+      }
+    } else {
+      console.log('This script requires a browser environment.');
+    }
+  </script>
 </body>
 </html>
