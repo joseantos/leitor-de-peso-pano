@@ -1,0 +1,90 @@
+!DOCTYPE html
+html lang=pt-BR
+head
+  meta charset=UTF-8
+  titleLeitor de Pesotitle
+  script src=httpsunpkg.com@zxinglibrary@latestscript
+  script src=httpscdn.jsdelivr.netnpmtesseract.js@2.1.5disttesseract.min.jsscript
+  style
+    body { font-family Arial, sans-serif; text-align center; padding 20px; }
+    video { width 100%; max-width 400px; margin-bottom 10px; }
+    #total { font-size 24px; margin-top 20px; }
+    button { margin-top 20px; padding 10px 20px; font-size 18px; }
+  style
+head
+body
+
+  h1Leitor de Peso de Peçash1
+  video id=video autoplayvideo
+  div id=ultimoPesoÚltimo Peso 0div
+  div id=totalTotal 0div
+  button onclick=zerar()Zerarbutton
+
+  !-- Audio para som --
+  audio id=beep src=httpsactions.google.comsoundsv1alarmsbeep_short.ogg preload=autoaudio
+
+  script
+    const codeReader = new ZXing.BrowserBarcodeReader();
+    const videoElement = document.getElementById('video');
+    const beepSound = document.getElementById('beep');
+    let total = 0;
+
+    function atualizarTela(peso) {
+      document.getElementById('ultimoPeso').innerText = `Último Peso ${peso}`;
+      document.getElementById('total').innerText = `Total ${total}`;
+    }
+
+    function zerar() {
+      total = 0;
+      atualizarTela(0);
+    }
+
+    function tocarSomEVibrar() {
+      beepSound.play();
+      if (navigator.vibrate) {
+        navigator.vibrate(200);  vibra por 200ms
+      }
+    }
+
+    async function iniciar() {
+      try {
+        const devices = await codeReader.listVideoInputDevices();
+        if (devices.length  0) {
+          codeReader.decodeFromVideoDevice(devices[0].deviceId, 'video', async (result, err) = {
+            if (result) {
+              console.log('Código de barras lido', result.text);
+
+               Captura imagem da câmera
+              const canvas = document.createElement('canvas');
+              const context = canvas.getContext('2d');
+              canvas.width = videoElement.videoWidth;
+              canvas.height = videoElement.videoHeight;
+              context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+               OCR
+              const { data { text } } = await Tesseract.recognize(canvas, 'por', { logger m = console.log(m) });
+              console.log('Texto OCR', text);
+
+               Procura número
+              const match = text.match(d+(.d+));
+              if (match) {
+                const peso = parseFloat(match[0]);
+                total += peso;
+                atualizarTela(peso);
+
+                 Toca som e vibra
+                tocarSomEVibrar();
+              }
+            }
+          });
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    iniciar();
+  script
+
+body
+html
