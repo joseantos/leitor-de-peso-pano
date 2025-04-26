@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Leitor de Peso</title>
   <style>
     body {
@@ -124,8 +125,9 @@
     manualInput.value = '';
   });
 
-  manualInput.addEventListener('keydown', (e) => {
+  manualInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
+      e.preventDefault();
       adicionarPeso(manualInput.value);
       manualInput.value = '';
     }
