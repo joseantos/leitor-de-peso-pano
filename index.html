@@ -106,10 +106,16 @@
     if (!isNaN(peso) && peso > 0) {
       pesos.push(peso);
       navigator.vibrate(200);
-      const beep = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
-      beep.play();
+      tocarSom();  // Chama a função para tocar o som
       atualizarLista();
     }
+  }
+
+  function tocarSom() {
+    const beep = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+    beep.play().catch(error => {
+      console.error('Erro ao reproduzir som: ', error);  // Caso o som não toque, será exibido um erro
+    });
   }
 
   startStopButton.addEventListener('click', () => {
@@ -125,11 +131,19 @@
     manualInput.value = '';
   });
 
-  manualInput.addEventListener('keypress', (e) => {
+  // Alteração do evento para 'keydown' para garantir que funcione no celular
+  manualInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       adicionarPeso(manualInput.value);
       manualInput.value = '';
+    }
+  });
+
+  // Melhorando o evento de 'input' para celulares
+  manualInput.addEventListener('input', (e) => {
+    if (manualInput.value && e.inputType === 'insertText') {
+      tocarSom(); // Toca o som toda vez que o valor do input muda
     }
   });
 
