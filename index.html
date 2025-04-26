@@ -120,7 +120,8 @@
     });
   }
 
-  startStopButton.addEventListener('click', () => {
+  // Substitui o 'click' por 'touchstart' para garantir que no celular o evento seja ativado
+  startStopButton.addEventListener('touchstart', () => {
     if (!scannerAtivo) {
       iniciarScanner();
     } else {
@@ -128,7 +129,7 @@
     }
   });
 
-  addManualButton.addEventListener('click', () => {
+  addManualButton.addEventListener('touchstart', () => {
     adicionarPeso(manualInput.value);
     manualInput.value = '';
   });
@@ -141,14 +142,8 @@
     }
   });
 
-  manualInput.addEventListener('input', (e) => {
-    if (manualInput.value && e.inputType === 'insertText') {
-      tocarSom(); // Toca o som toda vez que o valor do input muda
-    }
-  });
-
-  // Função para limpar a lista de pesos
-  clearListButton.addEventListener('click', () => {
+  // Evento touchstart para o botão de limpar lista
+  clearListButton.addEventListener('touchstart', () => {
     pesos = [];
     atualizarLista();
   });
