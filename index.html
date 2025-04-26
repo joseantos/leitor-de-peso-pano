@@ -73,6 +73,22 @@
       font-size: 14px;
       color: #888;
     }
+    @media print {
+      body {
+        background-color: #fff;
+        color: #000;
+      }
+      button, input, #scanner, #scanner-loading, footer {
+        display: none;
+      }
+      h1, h2, ul {
+        color: #000;
+      }
+      li {
+        background: none;
+        border: 1px solid #000;
+      }
+    }
   </style>
 </head>
 <body>
@@ -83,6 +99,7 @@
   <input type="number" id="manual-input" placeholder="Inserir peso manual">
   <button id="add-manual-button">Adicionar Manual</button>
   <button id="clear-list-button">Limpar Lista</button>
+  <button id="save-print-button">Salvar ou Imprimir</button>
   <div id="scanner" style="display:none;">
     <div id="scanner-loading" style="display:none;">Carregando câmera...</div>
   </div>
@@ -105,6 +122,7 @@
       const manualInput = document.getElementById('manual-input');
       const addManualButton = document.getElementById('add-manual-button');
       const clearListButton = document.getElementById('clear-list-button');
+      const savePrintButton = document.getElementById('save-print-button');
       const scannerDiv = document.getElementById('scanner');
       const loadingDiv = document.getElementById('scanner-loading');
 
@@ -190,6 +208,11 @@
         }
       });
 
+      savePrintButton.addEventListener(eventType, (e) => {
+        e.preventDefault();
+        salvarOuImprimir();
+      });
+
       const barcodeToWeight = {
         '123456789012': 1.5,
         '987654321098': 2.0
@@ -241,6 +264,43 @@
         scannerDiv.style.display = 'none';
         loadingDiv.style.display = 'none';
         startStopButton.textContent = 'Ler Código';
+      }
+
+      function salvarOuImprimir() {
+        if (pesos.length === 0) {
+          alert('Nenhum peso registrado para salvar ou imprimir.');
+          return;
+        }
+
+        const escolha = confirm('Deseja salvar como arquivo de texto? Clique em "OK" para salvar ou "Cancelar" para imprimir.');
+        if (escolha) {
+          // Salvar como arquivo de texto
+          const now = new Date();
+          const timestamp = now.toISOString().replace(/T/, '_').replace(/:/g, '-').split('.')[0];
+          const filename = `pesos_${timestamp}.txt`;
+          
+          let content = 'Leitor de Peso\n';
+          content += 'Data: ' + now.toLocaleString('pt-BR') + '\n\n';
+          content += 'Pesos Registrados:\n';
+          pesos.forEach((p, index) => {
+            content += `${index + 1}. ${p.toFixed(3)} kg\n`;
+          });
+          content += '\nTotal de Peças: ' + pesos.length + '\n';
+          content += 'Peso Total: ' + pesoTotal.textContent + ' kg\n';
+
+          const blob = new Blob([content], { type: 'text/plain' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        } else {
+          // Imprimir
+          window.print();
+        }
       }
     });
   </script>
